@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": false,
+    "baseUrl": "./src",
+    "paths": {
+      "constants/*": [
+        "constants/*"
+      ],
+      "components/*": [
+        "components/*"
+      ],
+      "common/*": [
+        "Common/*"
+      ]
+      
+    }
+  },
+  "exclude": [
+    "node_modules",
+  ]
+}
