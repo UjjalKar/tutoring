@@ -1,16 +1,17 @@
-import {SIGNUP_USER} from '../type'
+import {SIGNUP_USER} from '../type';
 
 const initialState = {
-    data: {}
-}
+  data: {},
+};
 
 export default function (state = initialState, action) {
-    switch (action.type) {
-        case SIGNUP_USER:
-            return {
-                ...state,
-                data:{...state.data,...action.payload}
-            }
-        default: return state
-    }
+  switch (action.type) {
+    case SIGNUP_USER:
+      return {
+        ...state,
+        data: {...state.data, ...action.payload},
+      };
+    default:
+      return state;
+  }
 }

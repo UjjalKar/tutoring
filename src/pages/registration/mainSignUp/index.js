@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,6 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Formik} from 'formik';
 // import {object, string, ref, boolean} from 'yup';
 // import * as Yup from 'yup';
-const Yup = require('yup').default;
 
 import {Fonts} from '../../../constants/fonts/Fonts';
 import {
@@ -50,11 +49,11 @@ const MainSignUp = (props) => {
   // const [phoneNo, onChangePhoneNo] = useState('');
   // const [pass, onChangePass] = useState('');
   // const [confirmPass, onChangeConfirmPass] = useState('');
-  // const [radio_1, onChangeRadio_1] = useState(false);
-  // const [radio_2, onChangeRadio_2] = useState(true);
-  // const [role, onChangeRole] = useState('Parent');
+  const [radio_1, onChangeRadio_1] = useState(false);
+  const [radio_2, onChangeRadio_2] = useState(true);
+  const [role, onChangeRole] = useState('Parent');
   // const [checked, onChangeCheck] = useState(false);
-
+  console.log('state role', role);
   const changeRadio_1 = () => {
     if (radio_1) {
       onChangeRadio_2(false);
@@ -79,87 +78,107 @@ const MainSignUp = (props) => {
     }
   };
 
-  const doValidation = () => {
+  const doValidation = (values) => {
+    // console.log('doValidation', values.fName);
+
+    let errors = {};
+    const {fName, lName, email, phoneNo, confirmPass, pass, checked} = values;
+
     if (fName.trim() == '') {
-      CommonToast.showToast('First name is required', 'success');
-      return;
+      // CommonToast.showToast('First name is required', 'success');
+      // console.log('First name is required', 'success');
+      errors.fName = 'First name is required';
     }
     if (lName.trim() == '') {
-      CommonToast.showToast('Last name is required', 'success');
-      return;
+      // console.log('Last name is required', 'success');
+      errors.lName = 'Last name is required';
     }
     if (email == '') {
-      CommonToast.showToast('Email is required', 'success');
-      return;
+      // console.log('Email is required', 'success');
+      errors.email = 'Email is required';
     }
-    if (!validateEmail()) {
-      CommonToast.showToast('Please enter valid email', 'success');
-      return;
+    if (!validateEmail(email)) {
+      // console.log('Please enter valid email', 'success');
+      errors.email = 'Please enter valid email';
     }
-    if (email == '') {
-      CommonToast.showToast('Please enter valid email', 'success');
-      return;
-    }
+    // if (email == '') {
+    //   console.log('Please enter valid email', 'success');
+
+    // }
     if (phoneNo == '') {
-      CommonToast.showToast('phone no. is required', 'success');
-      return;
+      // console.log('phone no. is required', 'success');
+      errors.phoneNo = 'phone no is required';
     }
     if (pass == '') {
-      CommonToast.showToast('Password is required', 'success');
-      return;
+      // console.log('Password is required', 'success');
+      errors.pass = 'Password is required';
     }
     if (pass.length < 6) {
-      CommonToast.showToast('Minimum of 8 characters', 'error');
-      return;
+      // console.log('Minimum of 8 characters', 'error');
+      errors.pass = 'Minimum of 8 characters';
     }
     if (confirmPass == '') {
-      CommonToast.showToast('Confirm Password is required', 'error');
-      return;
+      // console.log('Confirm Password is required', 'error');
+      errors.confirmPass = 'Confirm Password is required';
     }
     if (confirmPass != pass) {
-      CommonToast.showToast('Password do not match', 'error');
-      return;
+      // console.log('Password do not match', 'error');
+      errors.confirmPass = 'Password do not match';
     }
     if (role == '') {
-      CommonToast.showToast('Select a role', 'error');
-      return;
+      // console.log('Select a role', 'error');
+      errors.role = 'Select a role';
     }
     if (!checked) {
-      CommonToast.showToast('Agree and Continue', 'error');
-      return;
+      // console.log('Agree and Continue', 'error');
+      errors.checked = 'Agree and Continue';
     }
+
+    return errors;
+    // let signUpFromValue = {
+    //   first_name: fName,
+    //   last_name: lName,
+    //   email: email,
+    //   phone_number: phoneNo,
+    //   password: pass,
+    //   password_confirmation: confirmPass,
+    //   role: role,
+    // };
+    // dispatch(signUpUser(signUpFromValue));
+    // props.navigation.navigate('ParentInformation');
+  };
+
+  const _doSubmitForm = (val) => {
     let signUpFromValue = {
-      first_name: fName,
-      last_name: lName,
-      email: email,
-      phone_number: phoneNo,
-      password: pass,
-      password_confirmation: confirmPass,
+      first_name: val.fName,
+      last_name: val.lName,
+      email: val.email,
+      phone_number: val.phoneNo,
+      password: val.pass,
+      password_confirmation: val.confirmPass,
       role: role,
     };
     dispatch(signUpUser(signUpFromValue));
     props.navigation.navigate('ParentInformation');
   };
 
-  const validateEmail = () => {
+  const validateEmail = (email) => {
     var regexp = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
     return regexp.test(email);
   };
 
-  const ValidateSchema = Yup.object().shape({
-    fName: Yup.string().min(3, 'Too short!').required('first name required!'),
-    lName: Yup.string().min(3, 'Too short!').required('first name required!'),
-    email: Yup.string().email().required('Email is required!'),
-    phoneNo: Yup.string()
-      .required('Phone number is required')
-      .matches(
-        /^([0]{1}|\+?[234]{3})([7-9]{1})([0|1]{1})([\d]{1})([\d]{7})$/g,
-        'Invalid phone number',
-      ),
-    pass: Yup.string().required('Password is required!'),
-    confirmPass: Yup.string().oneOf([Yup.ref('pass'), null]),
-    checked: Yup.boolean().required('agreed !'),
-  });
+  const formikInitialValues = useMemo(
+    () => ({
+      fName: '',
+      lName: '',
+      phoneNo: '',
+      pass: '',
+      email: '',
+      confirmPass: '',
+      checked: false,
+    }),
+    [],
+  );
 
   return (
     <SafeAreaView style={styles.safeAreaViewconatiner}>
@@ -199,19 +218,6 @@ const MainSignUp = (props) => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="always"
             contentContainerStyle={{justifyContent: 'center'}}>
-            {/* 
-              
-                const [fName, onChangefName] = useState('');
-  const [lName, onChangelName] = useState('');
-  const [email, onChangeEmail] = useState('');
-  const [phoneNo, onChangePhoneNo] = useState('');
-  const [pass, onChangePass] = useState('');
-  const [confirmPass, onChangeConfirmPass] = useState('');
-  const [radio_1, onChangeRadio_1] = useState(false);
-  const [radio_2, onChangeRadio_2] = useState(true);
-  const [role, onChangeRole] = useState('Parent');
-  const [checked, onChangeCheck] = useState(false);
-              */}
             <View style={{marginBottom: 15, alignItems: 'center'}}>
               <Text
                 style={{
@@ -267,20 +273,10 @@ const MainSignUp = (props) => {
               </Text>
             </View>
             <Formik
-              initialValues={{
-                fName: '',
-                lName: '',
-                phoneNo: '',
-                pass: '',
-                email: '',
-                confirmPass: '',
-                radio_1: false,
-                radio_2: true,
-                role: '',
-                checked: false,
-              }}
-              onSubmit={(val) => console.log(val)}
-              validationSchema={ValidateSchema}>
+              initialValues={formikInitialValues}
+              onSubmit={_doSubmitForm}
+              validate={doValidation}
+              enableReinitialize>
               {({
                 handleChange,
                 handleBlur,
@@ -288,6 +284,9 @@ const MainSignUp = (props) => {
                 values,
                 setFieldValue,
                 errors,
+                setFieldTouched,
+                isValid,
+                dirty,
               }) => (
                 <>
                   <View style={{marginBottom: wp('6%')}}>
@@ -355,7 +354,7 @@ const MainSignUp = (props) => {
                         onChangeText={(text) => {
                           setFieldValue('lName', text);
                         }}
-                        onBlur={handleBlur}
+                        onBlur={handleBlur('lName')}
                       />
                     </View>
                   </View>
@@ -388,9 +387,10 @@ const MainSignUp = (props) => {
                         style={{flex: 0.9, paddingLeft: 5}}
                         value={values.email}
                         onChangeText={(text) => {
+                          console.log('isValid', isValid);
                           setFieldValue('email', text);
                         }}
-                        onBlur={handleBlur}
+                        onBlur={handleBlur('email')}
                       />
                     </View>
                   </View>
@@ -401,7 +401,8 @@ const MainSignUp = (props) => {
                       style={[
                         {
                           height: hp('6%'),
-                          borderColor: phoneNo == '' ? '#EEEEEE' : '#5EE1E8',
+                          // borderColor: values.phoneNo == '' ? '#EEEEEE' : '#5EE1E8',
+                          borderColor: errors.phoneNo ? 'red' : '#5EE1E8',
                           borderWidth: 1,
                         },
                         {flexDirection: 'row'},
@@ -424,7 +425,7 @@ const MainSignUp = (props) => {
                         onChangeText={(text) => {
                           setFieldValue('phoneNo', text);
                         }}
-                        onBlur={handleBlur}
+                        onBlur={handleBlur('phoneNo')}
                       />
                     </View>
                   </View>
@@ -435,7 +436,7 @@ const MainSignUp = (props) => {
                       style={[
                         {
                           height: hp('6%'),
-                          borderColor: pass == '' ? '#EEEEEE' : '#5EE1E8',
+                          borderColor: errors.pass ? 'red' : '#5EE1E8',
                           borderWidth: 1,
                         },
                         {flexDirection: 'row'},
@@ -459,7 +460,7 @@ const MainSignUp = (props) => {
                         onChangeText={(text) => {
                           setFieldValue('pass', text);
                         }}
-                        onBlur={handleBlur}
+                        onBlur={handleBlur('pass')}
                       />
                     </View>
                   </View>
@@ -496,8 +497,7 @@ const MainSignUp = (props) => {
                       style={[
                         {
                           height: hp('6%'),
-                          borderColor:
-                            confirmPass == '' ? '#EEEEEE' : '#5EE1E8',
+                          borderColor: errors.confirmPass ? 'red' : '#5EE1E8',
                           borderWidth: 1,
                         },
                         {flexDirection: 'row'},
@@ -522,6 +522,7 @@ const MainSignUp = (props) => {
                           // onChangeConfirmPass(text);
                           setFieldValue('confirmPass', text);
                         }}
+                        onBlur={handleBlur('confirmPass')}
                       />
                     </View>
                   </View>
@@ -540,19 +541,10 @@ const MainSignUp = (props) => {
                         <View style={{flex: 0.4, alignItems: 'flex-end'}}>
                           {/* <RadioButton color="#499828" value="first" /> */}
                           <CheckBox
-                            onBlur={handleBlur}
-                            checked={values.radio_1}
+                            onBlur={handleBlur('radio_1')}
+                            checked={radio_1}
                             onPress={() => {
-                              if (values.radio_1) {
-                                setFieldValue('radio_2', false);
-                                setFieldValue('radio_1', true);
-                                setFieldValue('role', 'Parent');
-                                // onChangeRole('Parent');
-                              } else {
-                                setFieldValue('radio_1', false);
-                                setFieldValue('radio_2', true);
-                                setFieldValue('role', 'Parent');
-                              }
+                              changeRadio_1();
                             }}
                             checkedIcon="dot-circle-o"
                             uncheckedIcon="circle-o"
@@ -579,10 +571,10 @@ const MainSignUp = (props) => {
                         <View style={{flex: 0.4, alignItems: 'flex-end'}}>
                           {/* <RadioButton color="#499828" value="second" /> */}
                           <CheckBox
-                            checked={values.radio_2}
-                            onPress={() =>
-                              setFieldValue('radio_2', !values.radio_2)
-                            }
+                            checked={radio_2}
+                            onPress={() => {
+                              changeRadio_2();
+                            }}
                             checkedIcon="dot-circle-o"
                             uncheckedIcon="circle-o"
                             checkedColor="#5CE0EB"
@@ -616,7 +608,7 @@ const MainSignUp = (props) => {
                         onPress={() =>
                           setFieldValue('checked', !values.checked)
                         }
-                        onBlur={handleBlur}
+                        onBlur={handleBlur('checked')}
                       />
                     </View>
                     <View style={{flex: 0.85}}>
@@ -627,10 +619,10 @@ const MainSignUp = (props) => {
                   </View>
 
                   <TouchableOpacity
-                    //  onPress={() => props.navigation.navigate('ParentInformation')}
                     // onPress={doValidation}
                     onPress={handleSubmit}
-                    style={styles.buttonContainer}>
+                    style={styles.buttonContainer}
+                    disabled={dirty && !isValid}>
                     <Text style={{fontSize: wp('4%'), color: '#fff'}}>
                       Continue
                     </Text>

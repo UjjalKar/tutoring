@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Image,
@@ -152,14 +152,18 @@ const Form = (props) => {
     setCalendarStatus(!calendarStatus);
   };
 
-  useState(() => {
-    requestCameraPermission;
-  }, []);
+  // useEffect(() => {
+  //   requestCameraPermission();
+  // }, []);
 
   const requestCameraPermission = async () => {
     try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
+      const result = await PermissionsAndroid.requestMultiple(
+        [
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        ],
         {
           title: 'Cool Photo App Camera Permission',
           message:
@@ -170,10 +174,16 @@ const Form = (props) => {
           buttonPositive: 'OK',
         },
       );
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      if (
+        result['android.permission.READ_EXTERNAL_STORAGE'] &&
+        result['android.permission.WRITE_EXTERNAL_STORAGE'] &&
+        result['android.permission.CAMERA'] === 'granted'
+      ) {
         console.log('You can use the camera');
+        return true;
       } else {
         console.log('Camera permission denied');
+        return false;
       }
     } catch (err) {
       console.warn(err);
@@ -188,23 +198,29 @@ const Form = (props) => {
         skipBackup: true,
       },
     };
-    await ImagePicker.showImagePicker(options, (response) => {
-      console.log('Response = ', response);
 
-      if (response.didCancel) {
-        console.log('User cancelled photo picker');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else if (response.customButton) {
-        console.log('User tapped custom button: ', response.customButton);
-      } else {
-        let source = response.uri;
-        setImageUrl(source);
-        setTimeout(() => {
-          editProfile(response);
-        });
-      }
-    });
+    const permission = await requestCameraPermission();
+    if (permission) {
+      await ImagePicker.showImagePicker(options, (response) => {
+        console.log('Response = ', response);
+
+        if (response.didCancel) {
+          console.log('User cancelled photo picker');
+        } else if (response.error) {
+          console.log('ImagePicker Error: ', response.error);
+        } else if (response.customButton) {
+          console.log('User tapped custom button: ', response.customButton);
+        } else {
+          let source = response.uri;
+          setImageUrl(source);
+          setTimeout(() => {
+            editProfile(response);
+          });
+        }
+      });
+    } else {
+      console.log('No permission');
+    }
   };
 
   const doValidation = () => {
@@ -224,27 +240,27 @@ const Form = (props) => {
       return;
     }
     if (gender == null) {
-      CommonToast.showToast('Gender is required');
+      // CommonToast.showToast('Gender is required');
       console.warn('Gender is required');
       return;
     }
     if (zipcode == '') {
-      CommonToast.showToast('zipcode is required');
+      // CommonToast.showToast('zipcode is required');
       console.warn('zipcode is required');
       return;
     }
     if (race == null) {
-      CommonToast.showToast('race is required');
+      // CommonToast.showToast('race is required');
       console.warn('race is required');
       return;
     }
     if (Occupation == null) {
-      CommonToast.showToast('Occupation is required');
+      // CommonToast.showToast('Occupation is required');
       console.warn('Occupation is required');
       return;
     }
     if (numberOfKids == null) {
-      CommonToast.showToast('Number of kids is required');
+      // CommonToast.showToast('Number of kids is required');
       console.warn('Number of kids is required');
 
       return;
@@ -441,7 +457,7 @@ const Form = (props) => {
             backgroundColor: SILVER_COLOR,
             marginLeft: hp('2%'),
           }}
-          onClick={() => selectPhoto()}
+          onClick={selectPhoto}
         />
       </View>
 

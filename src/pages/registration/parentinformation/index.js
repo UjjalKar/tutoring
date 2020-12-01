@@ -169,4 +169,27 @@ const styles = StyleSheet.create({
   },
 });
 
+/* 
+<KeyboardAvoidingView
+            behavior={'padding'}
+            enabled
+            keyboardVerticalOffset={140}
+            style={{
+              flex: 1,
+            }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              contentContainerStyle={{flexGrow: 1}}>
+              {indicator == 0 && <Form onClick={() => setIndicator(1)} />}
+              {indicator == 1 && (
+                <StudentForm
+                  addStudent={() => addStudent()}
+                  onClick={() => setIndicator(2)}
+                />
+              )}
+              {indicator == 2 && <AccountConfirmation />}
+            </ScrollView>
+          </KeyboardAvoidingView>
+*/
 export default ParentInformation;
