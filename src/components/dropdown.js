@@ -10,7 +10,7 @@ import {
   INACTIVE_COLOR,
   BLACK_COLOR,
   BORDER_INACTIVE_COLOR,
-} from '@/constants/colors/Colors';
+} from '../constants/colors/Colors';
 import Feather from 'react-native-vector-icons/Feather';
 const Dropdown = ({
   onChange,

@@ -1,9 +1,13 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Image, TextInput, Text, StyleSheet} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+
+import {useDispatch, useSelector} from 'react-redux';
+
+import {SIGNUP_STUDENTS} from '../../../Redux/type';
 import Dropdown from '../../../components/dropdown';
 import DropdownDateofBirth from '../../../components/dropDownDateofBirth';
 import TextBox from '../../../components/textBox';
@@ -17,12 +21,27 @@ import {
   BLACK_COLOR,
 } from '../../../constants/colors/Colors';
 import {UPLOAD_IMAGE} from '../../../constants/imagepath/Imagepath';
+
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Entypo from 'react-native-vector-icons/Entypo';
 
+import {
+  addSignupStudent,
+  signUpParant,
+} from '../../../Redux/Actions/signUpAction';
+
 const StudentForm = (props) => {
+  const dispatch = useDispatch();
+  const signUpData = useSelector((state) => state.signUpData);
+
+  useEffect(() => {
+    if (signUpData.signupSuccess) {
+      props.onClick();
+    }
+  }, [signUpData.signupSuccess]);
+
   const GenderList = [
     {
       label: 'Male',
@@ -125,6 +144,22 @@ const StudentForm = (props) => {
   const [zipcode, onChangeZipCode] = useState('');
   const [currentschool, onChangeCurrentSchool] = useState('');
 
+  const resetState = () => {
+    setCalendarStatus(false);
+    setDob('');
+    setGenderList(null);
+    setRaceList(null);
+    setMajorList(null);
+    setDisabilitiesList(null);
+    onChangefName('');
+    onChangelName('');
+    onChangeEmail('');
+    onChangePhoneNo('');
+    onChangeAddress('');
+    setStateList(null);
+    onChangeZipCode('');
+    onChangeCurrentSchool('');
+  };
   const toggleCalendar = () => {
     setCalendarStatus(!calendarStatus);
   };
@@ -132,6 +167,29 @@ const StudentForm = (props) => {
   const getDate = (day) => {
     setDob(day.dateString);
     setCalendarStatus(!calendarStatus);
+  };
+
+  const _addStudent = () => {
+    let student = {
+      first_name: fName,
+      last_name: lName,
+      email,
+      phone_number: phoneNo,
+      password: '',
+      password_confirmation: '',
+      role: 'Student',
+      gender,
+      race,
+      state,
+      address,
+      zip_code: zipcode,
+      dob,
+      disablities: disabilities,
+      current_school: currentschool,
+      major,
+      profile_picture: '',
+    };
+    dispatch(addSignupStudent(student));
   };
 
   return (
@@ -407,12 +465,12 @@ const StudentForm = (props) => {
             fontWeight: 'bold',
             fontSize: 16,
           }}
-          onClick={props.addStudent}
+          onClick={_addStudent}
         />
       </View>
 
       <PlainButton
-        text={'Continue'}
+        text={signUpData.loading ? 'Loading' : 'Continue'}
         textStyle={{
           color: WHITE_COLOR,
           fontSize: wp('5%'),
@@ -426,7 +484,9 @@ const StudentForm = (props) => {
           marginBottom: wp('6%'),
           borderRadius: 5,
         }}
-        onClick={props.onClick}
+        onClick={() => {
+          dispatch(signUpParant());
+        }}
       />
     </>
   );

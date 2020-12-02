@@ -12,7 +12,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-
+const shortid = require('shortid');
 import Dropdown from '../../../components/dropdown';
 import DropdownDateofBirth from '../../../components/dropDownDateofBirth';
 import TextBox from '../../../components/textBox';
@@ -30,8 +30,11 @@ import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ImagePicker from 'react-native-image-picker';
 import {useDispatch, useSelector} from 'react-redux';
-import {signUpUser} from '../../../Redux/Actions/signUpAction';
-const CommonToast = require('@/Common/common-toast/index');
+import {
+  signUpUser,
+  addSignupStudent,
+} from '../../../Redux/Actions/signUpAction';
+const CommonToast = require('../../../Common/common-toast/index');
 
 const Form = (props) => {
   const dispatch = useDispatch();
@@ -142,19 +145,18 @@ const Form = (props) => {
   const [address, onChangeAddress] = useState('');
   const [zipcode, onChangeZipCode] = useState('');
   const [source, setImageUrl] = useState(null);
+  const [profilePicture, setProfilePicture] = useState('');
 
   const toggleCalendar = () => {
     setCalendarStatus(!calendarStatus);
   };
 
   const getDate = (day) => {
+    console.log('getDate', day);
+    console.log('cal status', calendarStatus);
     setDob(day.dateString);
     setCalendarStatus(!calendarStatus);
   };
-
-  // useEffect(() => {
-  //   requestCameraPermission();
-  // }, []);
 
   const requestCameraPermission = async () => {
     try {
@@ -198,28 +200,31 @@ const Form = (props) => {
         skipBackup: true,
       },
     };
+    try {
+      const permission = await requestCameraPermission();
+      if (permission) {
+        await ImagePicker.showImagePicker(options, (response) => {
+          // console.log('Response = ', response);
 
-    const permission = await requestCameraPermission();
-    if (permission) {
-      await ImagePicker.showImagePicker(options, (response) => {
-        console.log('Response = ', response);
-
-        if (response.didCancel) {
-          console.log('User cancelled photo picker');
-        } else if (response.error) {
-          console.log('ImagePicker Error: ', response.error);
-        } else if (response.customButton) {
-          console.log('User tapped custom button: ', response.customButton);
-        } else {
-          let source = response.uri;
-          setImageUrl(source);
-          setTimeout(() => {
-            editProfile(response);
-          });
-        }
-      });
-    } else {
-      console.log('No permission');
+          if (response.didCancel) {
+            console.log('User cancelled photo picker');
+          } else if (response.error) {
+            console.log('ImagePicker Error: ', response.error);
+          } else if (response.customButton) {
+            console.log('User tapped custom button: ', response.customButton);
+          } else {
+            let source = response.uri;
+            setImageUrl(source);
+            setTimeout(() => {
+              editProfile(response);
+            });
+          }
+        });
+      } else {
+        console.log('No permission');
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -235,7 +240,7 @@ const Form = (props) => {
       return;
     }
     if (address == '') {
-      CommonToast.showToast('address is required');
+      // CommonToast.showToast('address is required');
       console.warn('address is required');
       return;
     }
@@ -273,27 +278,29 @@ const Form = (props) => {
       state: state,
       address: address,
       gender: gender,
-      zipCode: zipcode,
-      Occupation: Occupation,
+      zip_code: zipcode,
+      occupation: Occupation,
       race: race,
       number_of_kids: numberOfKids,
+      profile_picture: profilePicture,
     };
+
     dispatch(signUpUser(signUpFromValue));
-    console.log(JSON.stringify(signUpData));
+    // console.log(JSON.stringify(signUpData));
   };
 
   const editProfile = (image) => {
-    console.log('imageurl:', source);
+    // console.log('imageurl:', image.uri);
     const formData = new FormData();
     formData.append('files', {
       uri:
         Platform.OS == 'ios'
           ? image.uri.replace('file://', '/private')
           : image.uri,
-      name: 'photo.jpg',
+      name: `${shortid.generate()}.jpg`,
       type: 'image/jpg',
     });
-    return fetch(`http://18.217.121.144/api/v1/upload`, {
+    return fetch(`https://sistemsystems.com/api/v1/upload`, {
       method: 'POST',
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -303,7 +310,8 @@ const Form = (props) => {
     })
       .then((response) => response.json())
       .then((responseJson) => {
-        console.log('hello----', responseJson);
+        // console.log('hello----', responseJson);
+        setProfilePicture(responseJson.upload_path);
       })
       .catch((error) => {
         console.error(error);
@@ -476,7 +484,10 @@ const Form = (props) => {
           marginBottom: wp('6%'),
           borderRadius: 5,
         }}
-        onClick={() => doValidation()}
+        onClick={() => {
+          doValidation();
+          props.onClick();
+        }}
       />
     </>
   );

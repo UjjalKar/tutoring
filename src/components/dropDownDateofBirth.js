@@ -9,7 +9,7 @@ import {
   INACTIVE_COLOR,
   BLACK_COLOR,
   BORDER_INACTIVE_COLOR,
-} from '@/constants/colors/Colors';
+} from '../constants/colors/Colors';
 import Entypo from 'react-native-vector-icons/Entypo';
 const DropdownDateofBirth = ({label, value = '', onPress, customStyle}) => {
   return (

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Calendar} from 'react-native-calendars';
 // import {THEME_COLOR, WHITE_COLOR} from '../constants/colors/Colors';
-import {THEME_COLOR, WHITE_COLOR} from '@/constants/colors/Colors';
+import {THEME_COLOR, WHITE_COLOR} from '../constants/colors/Colors';
 
 const CalendarView = ({onDayPress}) => {
   return (

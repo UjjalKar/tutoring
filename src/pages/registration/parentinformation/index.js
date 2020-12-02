@@ -20,7 +20,8 @@ import Form from './parentForm';
 import StudentForm from './studentFrom';
 import AccountConfirmation from './accountConfirmation';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {THEME_COLOR} from '../../../constants/colors/Colors';
+import {THEME_COLOR, WHITE_COLOR} from '../../../constants/colors/Colors';
+import {PlainButton} from '../../../components/plainButton';
 
 const ParentInformation = (props) => {
   const [indicator, setIndicator] = useState(0);
@@ -101,27 +102,22 @@ const ParentInformation = (props) => {
             </>
           )}
 
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={'padding'}
             enabled
             keyboardVerticalOffset={140}
             style={{
               flex: 1,
-            }}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="always"
-              contentContainerStyle={{flexGrow: 1}}>
-              {indicator == 0 && <Form onClick={() => setIndicator(1)} />}
-              {indicator == 1 && (
-                <StudentForm
-                  addStudent={() => addStudent()}
-                  onClick={() => setIndicator(2)}
-                />
-              )}
-              {indicator == 2 && <AccountConfirmation />}
-            </ScrollView>
-          </KeyboardAvoidingView>
+            }}> */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+            contentContainerStyle={{flexGrow: 1}}>
+            {indicator == 0 && <Form onClick={() => setIndicator(1)} />}
+            {indicator == 1 && <StudentForm onClick={() => setIndicator(2)} />}
+            {indicator == 2 && <AccountConfirmation />}
+          </ScrollView>
+          {/* </KeyboardAvoidingView> */}
         </View>
       </View>
     </SafeAreaView>

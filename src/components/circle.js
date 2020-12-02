@@ -15,7 +15,7 @@ import {
   THEME_COLOR,
   INACTIVE_COLOR,
   CIRCLE_INACTIVE_COLOR,
-} from '@/constants/colors/Colors';
+} from '../constants/colors/Colors';
 const Circle = ({text, selected, onClick}) => {
   return (
     <TouchableOpacity

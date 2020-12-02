@@ -8,7 +8,7 @@ import {
   INACTIVE_COLOR,
   BLACK_COLOR,
   BORDER_INACTIVE_COLOR,
-} from '@/constants/colors/Colors';
+} from '../constants/colors/Colors';
 
 const TextBox = ({
   label,

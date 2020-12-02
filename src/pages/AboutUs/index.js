@@ -12,7 +12,7 @@ import {
   Platform,
   ImagePropTypes,
 } from 'react-native';
-import {BLUE_CIRCLE, LOGO_IMAGE} from '@/constants/imagepath/Imagepath';
+import {BLUE_CIRCLE, LOGO_IMAGE} from '../../constants/imagepath/Imagepath';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,

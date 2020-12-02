@@ -5,13 +5,13 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 // import {PlainButton} from '../../../components/plainButton';
-import {PlainButton} from '@/components/plainButton';
+import {PlainButton} from '../../../components/plainButton';
 import {
   THEME_COLOR,
   SILVER_COLOR,
   INACTIVE_COLOR,
   WHITE_COLOR,
-} from '@/constants/colors/Colors';
+} from '../../../constants/colors/Colors';
 
 const AccountConfirmation = (props) => {
   return (

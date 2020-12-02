@@ -4,11 +4,13 @@ import rootReducer from '../Redux/Reducers/index';
 
 const middleware = [thunk];
 
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
 const configReduxStore = (initialState = {}) => {
   return createStore(
     rootReducer,
     initialState,
-    compose(applyMiddleware(...middleware)),
+    composeEnhancers(applyMiddleware(...middleware)),
   );
 };
 
