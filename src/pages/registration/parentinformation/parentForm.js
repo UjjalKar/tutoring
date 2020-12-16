@@ -7,17 +7,29 @@ import {
   TextInput,
   PermissionsAndroid,
   Platform,
+  ToastAndroid,
+  ScrollView,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import Feather from 'react-native-vector-icons/Feather';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import Entypo from 'react-native-vector-icons/Entypo';
+import ImagePicker from 'react-native-image-picker';
+import {useDispatch, useSelector} from 'react-redux';
 const shortid = require('shortid');
+import {useFormik} from 'formik';
+import * as Yup from 'yup';
+import DatePicker from 'react-native-datepicker';
+
 import Dropdown from '../../../components/dropdown';
 import DropdownDateofBirth from '../../../components/dropDownDateofBirth';
 import TextBox from '../../../components/textBox';
 import CalendarView from '../../../components/calendar';
 import {PlainButton} from '../../../components/plainButton';
+import FormTextField from '../../../components/formTextField';
 import {
   THEME_COLOR,
   SILVER_COLOR,
@@ -26,19 +38,14 @@ import {
   BLACK_COLOR,
 } from '../../../constants/colors/Colors';
 import {UPLOAD_IMAGE} from '../../../constants/imagepath/Imagepath';
-import Feather from 'react-native-vector-icons/Feather';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import ImagePicker from 'react-native-image-picker';
-import {useDispatch, useSelector} from 'react-redux';
-import {
-  signUpUser,
-  addSignupStudent,
-} from '../../../Redux/Actions/signUpAction';
+import {signUpParentData} from '../../../Redux/Actions/signUpAction';
 const CommonToast = require('../../../Common/common-toast/index');
+const stateDataJson = require('../../../json/states.json');
 
 const Form = (props) => {
   const dispatch = useDispatch();
   const signUpData = useSelector((state) => state.signUpData);
+  // console.log('stateDataJson', stateDataJson);
 
   const GenderList = [
     {
@@ -56,21 +63,6 @@ const Form = (props) => {
     {
       label: 'I donot prefer to say',
       value: 'I donot prefer to say',
-    },
-  ];
-
-  const stateList = [
-    {
-      label: 'Alabama',
-      value: 'Alabama',
-    },
-    {
-      label: 'Alaska',
-      value: 'Alaska',
-    },
-    {
-      label: 'Arizona',
-      value: 'Arizona',
     },
   ];
 
@@ -146,6 +138,7 @@ const Form = (props) => {
   const [zipcode, onChangeZipCode] = useState('');
   const [source, setImageUrl] = useState(null);
   const [profilePicture, setProfilePicture] = useState('');
+  const [dateVal, seDateVal] = useState(new Date());
 
   const toggleCalendar = () => {
     setCalendarStatus(!calendarStatus);
@@ -153,7 +146,7 @@ const Form = (props) => {
 
   const getDate = (day) => {
     console.log('getDate', day);
-    console.log('cal status', calendarStatus);
+    // console.log('cal status', calendarStatus);
     setDob(day.dateString);
     setCalendarStatus(!calendarStatus);
   };
@@ -191,6 +184,7 @@ const Form = (props) => {
       console.warn(err);
     }
   };
+
   const selectPhoto = async () => {
     const options = {
       quality: 1.0,
@@ -204,7 +198,7 @@ const Form = (props) => {
       const permission = await requestCameraPermission();
       if (permission) {
         await ImagePicker.showImagePicker(options, (response) => {
-          // console.log('Response = ', response);
+          console.log('Response = ', response);
 
           if (response.didCancel) {
             console.log('User cancelled photo picker');
@@ -285,7 +279,7 @@ const Form = (props) => {
       profile_picture: profilePicture,
     };
 
-    dispatch(signUpUser(signUpFromValue));
+    dispatch(signUpParentData(signUpFromValue));
     // console.log(JSON.stringify(signUpData));
   };
 
@@ -293,12 +287,9 @@ const Form = (props) => {
     // console.log('imageurl:', image.uri);
     const formData = new FormData();
     formData.append('files', {
-      uri:
-        Platform.OS == 'ios'
-          ? image.uri.replace('file://', '/private')
-          : image.uri,
-      name: `${shortid.generate()}.jpg`,
-      type: 'image/jpg',
+      uri: image.uri,
+      name: image.fileName,
+      type: image.type,
     });
     return fetch(`https://sistemsystems.com/api/v1/upload`, {
       method: 'POST',
@@ -310,17 +301,27 @@ const Form = (props) => {
     })
       .then((response) => response.json())
       .then((responseJson) => {
-        // console.log('hello----', responseJson);
+        console.log('hello----', responseJson);
         setProfilePicture(responseJson.upload_path);
+        ToastAndroid.show('Photo uploaded!', ToastAndroid.SHORT);
       })
       .catch((error) => {
         console.error(error);
+        ToastAndroid.show('Error!', ToastAndroid.SHORT);
       });
   };
 
   return (
     <>
-      {calendarStatus && <CalendarView onDayPress={getDate} />}
+      {calendarStatus && (
+        <CalendarView
+          onDayPress={getDate}
+          horizontal={true}
+          pagingEnabled={true}
+          calendarWidth={wp('80%')}
+        />
+      )}
+
       <Dropdown
         label={'State of residence'}
         placeholder={{
@@ -329,7 +330,7 @@ const Form = (props) => {
           color: 'red',
         }}
         value={state}
-        items={stateList}
+        items={stateDataJson}
         onChange={setStateList}
         customStyle={{marginBottom: hp('2%')}}
       />
@@ -339,30 +340,15 @@ const Form = (props) => {
         onPress={toggleCalendar}
         customStyle={{marginBottom: hp('2%')}}
       />
-      <View style={{marginBottom: wp('6%')}}>
-        <Text style={styles.label}>Address</Text>
-        <View
-          style={[
-            {
-              height: hp('6%'),
-              borderColor: address == '' ? '#EEEEEE' : '#5EE1E8',
-              borderWidth: 1,
-            },
-            {flexDirection: 'row'},
-          ]}>
-          <View
-            style={{flex: 0.1, alignItems: 'center', justifyContent: 'center'}}>
-            <AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />
-          </View>
-          <TextInput
-            style={{flex: 0.9, paddingLeft: 5}}
-            value={address}
-            onChangeText={(text) => {
-              onChangeAddress(text);
-            }}
-          />
-        </View>
-      </View>
+
+      <FormTextField
+        labelText={'Address'}
+        leftIcon={<AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />}
+        onChangeText={(text) => {
+          onChangeAddress(text);
+        }}
+      />
+
       <Dropdown
         label={'Gender'}
         placeholder={{
@@ -375,30 +361,15 @@ const Form = (props) => {
         onChange={setGenderList}
         customStyle={{marginBottom: hp('2%')}}
       />
-      <View style={{marginBottom: wp('6%')}}>
-        <Text style={styles.label}>Zip Code</Text>
-        <View
-          style={[
-            {
-              height: hp('6%'),
-              borderColor: zipcode == '' ? '#EEEEEE' : '#5EE1E8',
-              borderWidth: 1,
-            },
-            {flexDirection: 'row'},
-          ]}>
-          <View
-            style={{flex: 0.1, alignItems: 'center', justifyContent: 'center'}}>
-            <AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />
-          </View>
-          <TextInput
-            style={{flex: 0.9, paddingLeft: 5}}
-            value={zipcode}
-            onChangeText={(text) => {
-              onChangeZipCode(text);
-            }}
-          />
-        </View>
-      </View>
+
+      <FormTextField
+        labelText={'Zip Code'}
+        leftIcon={<AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />}
+        onChangeText={(text) => {
+          onChangeZipCode(text);
+        }}
+      />
+
       <Dropdown
         label={'Race'}
         placeholder={{

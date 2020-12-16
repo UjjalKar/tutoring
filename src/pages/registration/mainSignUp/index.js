@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,28 +6,25 @@ import {
   SafeAreaView,
   Image,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ImagePropTypes,
+  ToastAndroid,
 } from 'react-native';
 // import {BLUE_CIRCLE, LOGO_IMAGE} from '@Constants/imagepath/Imagepath';
+import * as Yup from 'yup';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {Formik, useFormik} from 'formik';
 import Feather from 'react-native-vector-icons/Feather';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import {CheckBox} from 'react-native-elements';
 import {useDispatch, useSelector} from 'react-redux';
-import {Formik} from 'formik';
-// import {object, string, ref, boolean} from 'yup';
-// import * as Yup from 'yup';
-
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Fonts} from '../../../constants/fonts/Fonts';
 import {
   THEME_COLOR,
@@ -35,25 +32,63 @@ import {
   BLACK_COLOR,
 } from '../../../constants/colors/Colors';
 import {BLUE_CIRCLE, LOGO_IMAGE} from '../../../constants/imagepath/Imagepath';
-import {signUpUser} from '../../../Redux/Actions/signUpAction';
+import {
+  signUpParentData,
+  changeSignUpFrom,
+  signUpStudentData,
+} from '../../../Redux/Actions/signUpAction';
 const CommonToast = require('../../../Common/common-toast/index');
+import FormTextField from '../../../components/formTextField';
+
+const validateSchema = Yup.object().shape({
+  fName: Yup.string()
+    .min(2, 'Too Short!')
+    .max(50, 'Too long!')
+    .required('First name required!'),
+  lName: Yup.string()
+    .min(2, 'Too Short!')
+    .max(50, 'Too long!')
+    .required('Last name required!'),
+  email: Yup.string().email('Invalid email').required('Email is required!'),
+  phoneNo: Yup.number()
+    .min(10, 'Please enter your 10 digit phone no!')
+    .required('Phone number is required!'),
+  pass: Yup.string()
+    .min(8, 'Password should be atleast 8 characters!')
+    .required('Password is required!'),
+  confirmPass: Yup.string().when('pass', {
+    is: (val) => (val && val.length > 0 ? true : false),
+    then: Yup.string().oneOf([Yup.ref('pass')], "Password doesn't match!"),
+    checked: Yup.boolean().oneOf([true], 'Accept Trems and condition!'),
+  }),
+});
 
 const MainSignUp = (props) => {
   const dispatch = useDispatch();
   const signUpData = useSelector((state) => state.signUpData);
-  console.log(JSON.stringify(signUpData));
-
-  // const [fName, onChangefName] = useState('');
-  // const [lName, onChangelName] = useState('');
-  // const [email, onChangeEmail] = useState('');
-  // const [phoneNo, onChangePhoneNo] = useState('');
-  // const [pass, onChangePass] = useState('');
-  // const [confirmPass, onChangeConfirmPass] = useState('');
-  const [radio_1, onChangeRadio_1] = useState(false);
-  const [radio_2, onChangeRadio_2] = useState(true);
+  const [radio_1, onChangeRadio_1] = useState(true);
+  const [radio_2, onChangeRadio_2] = useState(false);
   const [role, onChangeRole] = useState('Parent');
   // const [checked, onChangeCheck] = useState(false);
-  console.log('state role', role);
+  const formik = useFormik({
+    initialValues: {
+      fName: '',
+      lName: '',
+      phoneNo: '',
+      pass: '',
+      email: '',
+      confirmPass: '',
+      checked: false,
+    },
+    validationSchema: validateSchema,
+    onSubmit: (val) => {
+      _doSubmitForm(val);
+    },
+  });
+  useEffect(() => {
+    dispatch(changeSignUpFrom(role));
+  }, [role]);
+
   const changeRadio_1 = () => {
     if (radio_1) {
       onChangeRadio_2(false);
@@ -78,77 +113,7 @@ const MainSignUp = (props) => {
     }
   };
 
-  const doValidation = (values) => {
-    // console.log('doValidation', values.fName);
-
-    let errors = {};
-    const {fName, lName, email, phoneNo, confirmPass, pass, checked} = values;
-
-    if (fName.trim() == '') {
-      // CommonToast.showToast('First name is required', 'success');
-      // console.log('First name is required', 'success');
-      errors.fName = 'First name is required';
-    }
-    if (lName.trim() == '') {
-      // console.log('Last name is required', 'success');
-      errors.lName = 'Last name is required';
-    }
-    if (email == '') {
-      // console.log('Email is required', 'success');
-      errors.email = 'Email is required';
-    }
-    if (!validateEmail(email)) {
-      // console.log('Please enter valid email', 'success');
-      errors.email = 'Please enter valid email';
-    }
-    // if (email == '') {
-    //   console.log('Please enter valid email', 'success');
-
-    // }
-    if (phoneNo == '') {
-      // console.log('phone no. is required', 'success');
-      errors.phoneNo = 'phone no is required';
-    }
-    if (pass == '') {
-      // console.log('Password is required', 'success');
-      errors.pass = 'Password is required';
-    }
-    if (pass.length < 6) {
-      // console.log('Minimum of 8 characters', 'error');
-      errors.pass = 'Minimum of 8 characters';
-    }
-    if (confirmPass == '') {
-      // console.log('Confirm Password is required', 'error');
-      errors.confirmPass = 'Confirm Password is required';
-    }
-    if (confirmPass != pass) {
-      // console.log('Password do not match', 'error');
-      errors.confirmPass = 'Password do not match';
-    }
-    if (role == '') {
-      // console.log('Select a role', 'error');
-      errors.role = 'Select a role';
-    }
-    if (!checked) {
-      // console.log('Agree and Continue', 'error');
-      errors.checked = 'Agree and Continue';
-    }
-
-    return errors;
-    // let signUpFromValue = {
-    //   first_name: fName,
-    //   last_name: lName,
-    //   email: email,
-    //   phone_number: phoneNo,
-    //   password: pass,
-    //   password_confirmation: confirmPass,
-    //   role: role,
-    // };
-    // dispatch(signUpUser(signUpFromValue));
-    // props.navigation.navigate('ParentInformation');
-  };
-
-  const _doSubmitForm = (val) => {
+  const _doSubmitForm = (val, actions) => {
     let signUpFromValue = {
       first_name: val.fName,
       last_name: val.lName,
@@ -158,7 +123,11 @@ const MainSignUp = (props) => {
       password_confirmation: val.confirmPass,
       role: role,
     };
-    dispatch(signUpUser(signUpFromValue));
+    if (role === 'Parent') {
+      dispatch(signUpParentData(signUpFromValue));
+    } else {
+      dispatch(signUpStudentData(signUpFromValue));
+    }
     props.navigation.navigate('ParentInformation');
   };
 
@@ -166,19 +135,6 @@ const MainSignUp = (props) => {
     var regexp = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
     return regexp.test(email);
   };
-
-  const formikInitialValues = useMemo(
-    () => ({
-      fName: '',
-      lName: '',
-      phoneNo: '',
-      pass: '',
-      email: '',
-      confirmPass: '',
-      checked: false,
-    }),
-    [],
-  );
 
   return (
     <SafeAreaView style={styles.safeAreaViewconatiner}>
@@ -207,7 +163,7 @@ const MainSignUp = (props) => {
           />
         </View>
         <KeyboardAvoidingView
-          behavior={'position'}
+          behavior={'height'}
           enabled
           keyboardVerticalOffset={-80}
           style={{
@@ -272,533 +228,76 @@ const MainSignUp = (props) => {
                 Set up your account
               </Text>
             </View>
-            <Formik
-              initialValues={formikInitialValues}
-              onSubmit={_doSubmitForm}
-              validate={doValidation}
-              enableReinitialize>
-              {({
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                values,
-                setFieldValue,
-                errors,
-                setFieldTouched,
-                isValid,
-                dirty,
-              }) => (
-                <>
-                  <View style={{marginBottom: wp('6%')}}>
-                    <Text style={styles.label}>First Name</Text>
-                    <View
-                      style={[
-                        {
-                          height: hp('6%'),
-                          // borderColor: fName == '' ? '#EEEEEE' : '#5EE1E8',
-                          borderColor: errors.fName ? 'red' : '#5EE1E8',
-                          borderWidth: 1,
-                        },
-                        {flexDirection: 'row'},
-                      ]}>
-                      <View
-                        style={{
-                          flex: 0.1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        <AntDesign
-                          name={'user'}
-                          size={wp('5%')}
-                          color={'#E2E1E1'}
-                        />
-                      </View>
-                      <TextInput
-                        style={{flex: 0.9, paddingLeft: 5}}
-                        value={values.fName}
-                        onChangeText={(text) => {
-                          setFieldValue('fName', text);
-                        }}
-                        onBlur={handleBlur('fName')}
-                      />
-                    </View>
-                  </View>
 
-                  <View style={{marginBottom: wp('6%')}}>
-                    <Text style={styles.label}>Last Name</Text>
-                    <View
-                      style={[
-                        {
-                          height: hp('6%'),
-                          // borderColor: lName == '' ? '#EEEEEE' : '#5EE1E8',
-                          borderColor: errors.lName ? 'red' : '#5EE1E8',
-                          borderWidth: 1,
-                        },
-                        {flexDirection: 'row'},
-                      ]}>
-                      <View
-                        style={{
-                          flex: 0.1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        <AntDesign
-                          name={'user'}
-                          size={wp('5%')}
-                          color={'#E2E1E1'}
-                        />
-                      </View>
-                      <TextInput
-                        style={{flex: 0.9, paddingLeft: 5}}
-                        value={values.lName}
-                        onChangeText={(text) => {
-                          setFieldValue('lName', text);
-                        }}
-                        onBlur={handleBlur('lName')}
-                      />
-                    </View>
-                  </View>
+            <FormTextField
+              labelText="First Name"
+              leftIcon={
+                <AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />
+              }
+              errorText={formik.errors.fName}
+              onChangeText={formik.handleChange('fName')}
+              value={formik.values.fName}
+              handleBlur={formik.handleBlur('fName')}
+              touched={formik.touched.fName}
+            />
 
-                  <View style={{marginBottom: wp('6%')}}>
-                    <Text style={styles.label}>Email Address</Text>
-                    <View
-                      style={[
-                        {
-                          height: hp('6%'),
-                          // borderColor: email == '' ? '#EEEEEE' : '#5EE1E8',
-                          borderColor: errors.email ? 'red' : '#5EE1E8',
-                          borderWidth: 1,
-                        },
-                        {flexDirection: 'row'},
-                      ]}>
-                      <View
-                        style={{
-                          flex: 0.1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        <MaterialCommunityIcons
-                          name={'email-edit-outline'}
-                          size={wp('5%')}
-                          color={'#E2E1E1'}
-                        />
-                      </View>
-                      <TextInput
-                        style={{flex: 0.9, paddingLeft: 5}}
-                        value={values.email}
-                        onChangeText={(text) => {
-                          console.log('isValid', isValid);
-                          setFieldValue('email', text);
-                        }}
-                        onBlur={handleBlur('email')}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={{marginBottom: wp('6%')}}>
-                    <Text style={styles.label}>Phone Number</Text>
-                    <View
-                      style={[
-                        {
-                          height: hp('6%'),
-                          // borderColor: values.phoneNo == '' ? '#EEEEEE' : '#5EE1E8',
-                          borderColor: errors.phoneNo ? 'red' : '#5EE1E8',
-                          borderWidth: 1,
-                        },
-                        {flexDirection: 'row'},
-                      ]}>
-                      <View
-                        style={{
-                          flex: 0.1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        <Feather
-                          name={'phone-forwarded'}
-                          size={wp('5%')}
-                          color={'#E2E1E1'}
-                        />
-                      </View>
-                      <TextInput
-                        style={{flex: 0.9, paddingLeft: 5}}
-                        value={values.phoneNo}
-                        onChangeText={(text) => {
-                          setFieldValue('phoneNo', text);
-                        }}
-                        onBlur={handleBlur('phoneNo')}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={{marginBottom: wp('3%')}}>
-                    <Text style={styles.label}>Password</Text>
-                    <View
-                      style={[
-                        {
-                          height: hp('6%'),
-                          borderColor: errors.pass ? 'red' : '#5EE1E8',
-                          borderWidth: 1,
-                        },
-                        {flexDirection: 'row'},
-                      ]}>
-                      <View
-                        style={{
-                          flex: 0.1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        <EvilIcons
-                          name={'lock'}
-                          size={wp('8%')}
-                          color={'#E2E1E1'}
-                        />
-                      </View>
-                      <TextInput
-                        style={{flex: 0.9, paddingLeft: 5}}
-                        value={values.pass}
-                        secureTextEntry={true}
-                        onChangeText={(text) => {
-                          setFieldValue('pass', text);
-                        }}
-                        onBlur={handleBlur('pass')}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={{marginBottom: 2}}>
-                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                      <Ionicons
-                        name="ios-checkmark"
-                        size={22}
-                        color="#707070"
-                      />
-                      <Text style={{color: '#838383', marginLeft: 10}}>
-                        One uppercase charecter
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={{marginBottom: wp('4%')}}>
-                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                      <Ionicons
-                        name="ios-checkmark"
-                        size={22}
-                        color="#707070"
-                      />
-                      <Text style={{color: '#838383', marginLeft: 10}}>
-                        Minimum of 8 charecter
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={{marginBottom: wp('3%')}}>
-                    <Text style={styles.label}>Confirm Password</Text>
-                    <View
-                      style={[
-                        {
-                          height: hp('6%'),
-                          borderColor: errors.confirmPass ? 'red' : '#5EE1E8',
-                          borderWidth: 1,
-                        },
-                        {flexDirection: 'row'},
-                      ]}>
-                      <View
-                        style={{
-                          flex: 0.1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        <EvilIcons
-                          name={'lock'}
-                          size={wp('8%')}
-                          color={'#E2E1E1'}
-                        />
-                      </View>
-                      <TextInput
-                        style={{flex: 0.9, paddingLeft: 5}}
-                        value={values.confirmPass}
-                        secureTextEntry={true}
-                        onChangeText={(text) => {
-                          // onChangeConfirmPass(text);
-                          setFieldValue('confirmPass', text);
-                        }}
-                        onBlur={handleBlur('confirmPass')}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={{marginBottom: wp('4%')}}>
-                    <Text style={{marginVertical: wp('2%')}}>
-                      Are you parent or student ?
-                    </Text>
-                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                      <View
-                        style={{
-                          flex: 0.5,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}>
-                        <View style={{flex: 0.4, alignItems: 'flex-end'}}>
-                          {/* <RadioButton color="#499828" value="first" /> */}
-                          <CheckBox
-                            onBlur={handleBlur('radio_1')}
-                            checked={radio_1}
-                            onPress={() => {
-                              changeRadio_1();
-                            }}
-                            checkedIcon="dot-circle-o"
-                            uncheckedIcon="circle-o"
-                            checkedColor="#5CE0EB"
-                            size={26}
-                            containerStyle={{
-                              backgroundColor: 'transparent',
-                              borderWidth: 0,
-                              padding: 0,
-                            }}
-                          />
-                        </View>
-                        <View style={{flex: 0.4, alignItems: 'center'}}>
-                          <Text>Parent</Text>
-                        </View>
-                      </View>
-
-                      <View
-                        style={{
-                          flex: 0.5,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}>
-                        <View style={{flex: 0.4, alignItems: 'flex-end'}}>
-                          {/* <RadioButton color="#499828" value="second" /> */}
-                          <CheckBox
-                            checked={radio_2}
-                            onPress={() => {
-                              changeRadio_2();
-                            }}
-                            checkedIcon="dot-circle-o"
-                            uncheckedIcon="circle-o"
-                            checkedColor="#5CE0EB"
-                            size={26}
-                            containerStyle={{
-                              backgroundColor: 'transparent',
-                              borderWidth: 0,
-                              padding: 0,
-                            }}
-                            onBlur={handleBlur}
-                          />
-                        </View>
-                        <View style={{flex: 0.4, alignItems: 'center'}}>
-                          <Text>Student</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      alignSelf: 'center',
-                      marginBottom: wp('8%'),
-                    }}>
-                    <View style={{flex: 0.15, alignItems: 'center'}}>
-                      <CheckBox
-                        checked={values.checked}
-                        onPress={() =>
-                          setFieldValue('checked', !values.checked)
-                        }
-                        onBlur={handleBlur('checked')}
-                      />
-                    </View>
-                    <View style={{flex: 0.85}}>
-                      <Text style={{marginTop: 10, color: '#334159'}}>
-                        I agree to the Terms and Conditions and Privacy Policy
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    // onPress={doValidation}
-                    onPress={handleSubmit}
-                    style={styles.buttonContainer}
-                    disabled={dirty && !isValid}>
-                    <Text style={{fontSize: wp('4%'), color: '#fff'}}>
-                      Continue
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => props.navigation.navigate('Login')}
-                    style={{marginVertical: hp('2%')}}>
-                    <Text
-                      style={{
-                        fontSize: wp('4%'),
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        alignSelf: 'center',
-                      }}>
-                      Already signup? Please Login
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </Formik>
-
-            {/* <View style={{marginBottom: wp('6%')}}>
-              <Text style={styles.label}>First Name</Text>
-              <View
-                style={[
-                  {
-                    height: hp('6%'),
-                    borderColor: fName == '' ? '#EEEEEE' : '#5EE1E8',
-                    borderWidth: 1,
-                  },
-                  {flexDirection: 'row'},
-                ]}>
-                <View
-                  style={{
-                    flex: 0.1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />
-                </View>
-                <TextInput
-                  style={{flex: 0.9, paddingLeft: 5}}
-                  value={fName}
-                  onChangeText={(text) => {
-                    onChangefName(text);
-                  }}
+            <FormTextField
+              labelText="Last Name"
+              leftIcon={
+                <AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />
+              }
+              errorText={formik.errors.lName}
+              onChangeText={formik.handleChange('lName')}
+              value={formik.values.lName}
+              handleBlur={formik.handleBlur('lName')}
+              touched={formik.touched.lName}
+            />
+            <FormTextField
+              labelText="Email Address"
+              leftIcon={
+                <MaterialCommunityIcons
+                  name={'email-edit-outline'}
+                  size={wp('5%')}
+                  color={'#E2E1E1'}
                 />
-              </View>
-            </View> */}
+              }
+              errorText={formik.errors.email}
+              onChangeText={formik.handleChange('email')}
+              value={formik.values.email}
+              handleBlur={formik.handleBlur('email')}
+              touched={formik.touched.email}
+            />
 
-            {/* <View style={{marginBottom: wp('6%')}}>
-              <Text style={styles.label}>Last Name</Text>
-              <View
-                style={[
-                  {
-                    height: hp('6%'),
-                    borderColor: lName == '' ? '#EEEEEE' : '#5EE1E8',
-                    borderWidth: 1,
-                  },
-                  {flexDirection: 'row'},
-                ]}>
-                <View
-                  style={{
-                    flex: 0.1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <AntDesign name={'user'} size={wp('5%')} color={'#E2E1E1'} />
-                </View>
-                <TextInput
-                  style={{flex: 0.9, paddingLeft: 5}}
-                  value={lName}
-                  onChangeText={(text) => {
-                    onChangelName(text);
-                  }}
+            <FormTextField
+              labelText="Phone Number"
+              leftIcon={
+                <Feather
+                  name={'phone-forwarded'}
+                  size={wp('5%')}
+                  color={'#E2E1E1'}
                 />
-              </View>
-            </View> */}
+              }
+              errorText={formik.errors.phoneNo}
+              onChangeText={formik.handleChange('phoneNo')}
+              value={formik.values.phoneNo}
+              handleBlur={formik.handleBlur('phoneNo')}
+              touched={formik.touched.phoneNo}
+            />
 
-            {/* <View style={{marginBottom: wp('6%')}}>
-              <Text style={styles.label}>Email Address</Text>
-              <View
-                style={[
-                  {
-                    height: hp('6%'),
-                    borderColor: email == '' ? '#EEEEEE' : '#5EE1E8',
-                    borderWidth: 1,
-                  },
-                  {flexDirection: 'row'},
-                ]}>
-                <View
-                  style={{
-                    flex: 0.1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <MaterialCommunityIcons
-                    name={'email-edit-outline'}
-                    size={wp('5%')}
-                    color={'#E2E1E1'}
-                  />
-                </View>
-                <TextInput
-                  style={{flex: 0.9, paddingLeft: 5}}
-                  value={email}
-                  onChangeText={(text) => {
-                    onChangeEmail(text);
-                  }}
-                />
-              </View>
-            </View> */}
+            <FormTextField
+              labelText="Password"
+              leftIcon={
+                <EvilIcons name={'lock'} size={wp('8%')} color={'#E2E1E1'} />
+              }
+              errorText={formik.errors.pass}
+              onChangeText={formik.handleChange('pass')}
+              value={formik.values.pass}
+              secureTextEntry={true}
+              handleBlur={formik.handleBlur('pass')}
+              touched={formik.touched.pass}
+            />
 
-            {/* <View style={{marginBottom: wp('6%')}}>
-              <Text style={styles.label}>Phone Number</Text>
-              <View
-                style={[
-                  {
-                    height: hp('6%'),
-                    borderColor: phoneNo == '' ? '#EEEEEE' : '#5EE1E8',
-                    borderWidth: 1,
-                  },
-                  {flexDirection: 'row'},
-                ]}>
-                <View
-                  style={{
-                    flex: 0.1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <Feather
-                    name={'phone-forwarded'}
-                    size={wp('5%')}
-                    color={'#E2E1E1'}
-                  />
-                </View>
-                <TextInput
-                  style={{flex: 0.9, paddingLeft: 5}}
-                  value={phoneNo}
-                  onChangeText={(text) => {
-                    onChangePhoneNo(text);
-                  }}
-                />
-              </View>
-            </View> */}
-
-            {/* <View style={{marginBottom: wp('3%')}}>
-              <Text style={styles.label}>Password</Text>
-              <View
-                style={[
-                  {
-                    height: hp('6%'),
-                    borderColor: pass == '' ? '#EEEEEE' : '#5EE1E8',
-                    borderWidth: 1,
-                  },
-                  {flexDirection: 'row'},
-                ]}>
-                <View
-                  style={{
-                    flex: 0.1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <EvilIcons name={'lock'} size={wp('8%')} color={'#E2E1E1'} />
-                </View>
-                <TextInput
-                  style={{flex: 0.9, paddingLeft: 5}}
-                  value={pass}
-                  secureTextEntry={true}
-                  onChangeText={(text) => {
-                    onChangePass(text);
-                  }}
-                />
-              </View>
-            </View> */}
-
-            {/* <View style={{marginBottom: 2}}>
+            <View style={{marginBottom: 2}}>
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
                 <Ionicons name="ios-checkmark" size={22} color="#707070" />
                 <Text style={{color: '#838383', marginLeft: 10}}>
@@ -814,39 +313,21 @@ const MainSignUp = (props) => {
                   Minimum of 8 charecter
                 </Text>
               </View>
-            </View> */}
+            </View>
 
-            {/* <View style={{marginBottom: wp('3%')}}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <View
-                style={[
-                  {
-                    height: hp('6%'),
-                    borderColor: confirmPass == '' ? '#EEEEEE' : '#5EE1E8',
-                    borderWidth: 1,
-                  },
-                  {flexDirection: 'row'},
-                ]}>
-                <View
-                  style={{
-                    flex: 0.1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <EvilIcons name={'lock'} size={wp('8%')} color={'#E2E1E1'} />
-                </View>
-                <TextInput
-                  style={{flex: 0.9, paddingLeft: 5}}
-                  value={confirmPass}
-                  secureTextEntry={true}
-                  onChangeText={(text) => {
-                    onChangeConfirmPass(text);
-                  }}
-                />
-              </View>
-            </View> */}
+            <FormTextField
+              labelText="Confirm Password"
+              leftIcon={
+                <EvilIcons name={'lock'} size={wp('8%')} color={'#E2E1E1'} />
+              }
+              errorText={formik.errors.confirmPass}
+              onChangeText={formik.handleChange('confirmPass')}
+              value={formik.values.confirmPass}
+              secureTextEntry={true}
+              handleBlur={formik.handleBlur('confirmPass')}
+            />
 
-            {/* <View style={{marginBottom: wp('4%')}}>
+            <View style={{marginBottom: wp('4%')}}>
               <Text style={{marginVertical: wp('2%')}}>
                 Are you parent or student ?
               </Text>
@@ -858,10 +339,12 @@ const MainSignUp = (props) => {
                     alignItems: 'center',
                   }}>
                   <View style={{flex: 0.4, alignItems: 'flex-end'}}>
-                    // <RadioButton color="#499828" value="first" />
+                    {/* <RadioButton color="#499828" value="first" /> */}
                     <CheckBox
                       checked={radio_1}
-                      onPress={changeRadio_1}
+                      onPress={() => {
+                        changeRadio_1();
+                      }}
                       checkedIcon="dot-circle-o"
                       uncheckedIcon="circle-o"
                       checkedColor="#5CE0EB"
@@ -885,10 +368,12 @@ const MainSignUp = (props) => {
                     alignItems: 'center',
                   }}>
                   <View style={{flex: 0.4, alignItems: 'flex-end'}}>
-                    // <RadioButton color="#499828" value="second" /> 
+                    {/* <RadioButton color="#499828" value="second" /> */}
                     <CheckBox
                       checked={radio_2}
-                      onPress={changeRadio_2}
+                      onPress={() => {
+                        changeRadio_2();
+                      }}
                       checkedIcon="dot-circle-o"
                       uncheckedIcon="circle-o"
                       checkedColor="#5CE0EB"
@@ -905,9 +390,9 @@ const MainSignUp = (props) => {
                   </View>
                 </View>
               </View>
-            </View> */}
+            </View>
 
-            {/* <View
+            <View
               style={{
                 flexDirection: 'row',
                 justifyContent: 'center',
@@ -917,22 +402,29 @@ const MainSignUp = (props) => {
               }}>
               <View style={{flex: 0.15, alignItems: 'center'}}>
                 <CheckBox
-                  checked={checked}
-                  onPress={() => onChangeCheck(!checked)}
+                  checked={formik.values.checked}
+                  onPress={() =>
+                    formik.setFieldValue('checked', !formik.values.checked)
+                  }
                 />
               </View>
               <View style={{flex: 0.85}}>
-                <Text style={{marginTop: 10, color: '#334159'}}>
+                <Text
+                  style={{
+                    marginTop: 10,
+                    color: '#334159',
+                    color: formik.errors.checked == '' ? 'red' : 'black',
+                  }}>
                   I agree to the Terms and Conditions and Privacy Policy
                 </Text>
               </View>
-            </View> */}
+            </View>
 
-            {/* <TouchableOpacity
-              //  onPress={() => props.navigation.navigate('ParentInformation')}
+            <TouchableOpacity
               // onPress={doValidation}
-              onPress={handleSubmit}
-              style={styles.buttonContainer}>
+              onPress={formik.handleSubmit}
+              style={styles.buttonContainer}
+              disabled={formik.dirty && !formik.isValid}>
               <Text style={{fontSize: wp('4%'), color: '#fff'}}>Continue</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -947,7 +439,7 @@ const MainSignUp = (props) => {
                 }}>
                 Already signup? Please Login
               </Text>
-            </TouchableOpacity> */}
+            </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
@@ -978,5 +470,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 10,
   },
+  errorLabel: {
+    color: 'red',
+    marginTop: wp('2%'),
+  },
 });
+
 export default MainSignUp;

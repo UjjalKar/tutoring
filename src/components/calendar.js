@@ -1,13 +1,18 @@
 import React from 'react';
-import {Calendar} from 'react-native-calendars';
+import {Calendar, CalendarList} from 'react-native-calendars';
 // import {THEME_COLOR, WHITE_COLOR} from '../constants/colors/Colors';
 import {THEME_COLOR, WHITE_COLOR} from '../constants/colors/Colors';
 
-const CalendarView = ({onDayPress}) => {
+const CalendarView = ({onDayPress, ...othersProps}) => {
   return (
-    <Calendar
+    <CalendarList
       // Initially visible month. Default = Date()
       current={new Date()}
+      pastScrollRange={50}
+      futureScrollRange={50}
+      scrollEnabled={true}
+      showScrollIndicator={true}
+      {...othersProps}
       // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
       // minDate={'2012-05-10'}
       // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
